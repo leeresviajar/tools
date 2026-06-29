@@ -160,7 +160,7 @@
   <div class="panel-feed">
     <span class="feed-label">Vista previa del feed</span>
     <div class="feed-grid" id="feed-grid">
-      <!-- 12 celdas = 4 filas -->
+      <!-- 18 celdas = 6 filas -->
     </div>
     <button class="btn-clear" onclick="clearFeed()">Limpiar feed</button>
   </div>
@@ -226,7 +226,7 @@ let dragSourceCell = null;
 
 // Crear celdas del feed
 const grid = document.getElementById('feed-grid');
-for (let i = 0; i < 12; i++) {
+for (let i = 0; i < 18; i++) {
   const cell = document.createElement('div');
   cell.className = 'feed-cell empty';
   cell.dataset.index = i;
