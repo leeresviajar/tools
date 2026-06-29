@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed preview · Leer es viajar</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    background: #f0ede8;
+    color: #1a1a18;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    height: 52px;
+    background: #fff;
+    border-bottom: 0.5px solid #ece8e1;
+  }
+  .topbar-logo {
+    font-family: Georgia, serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #1d9e75;
+  }
+  .topbar-hint {
+    font-size: 11px;
+    color: #9a948d;
+  }
+
+  .layout {
+    display: flex;
+    height: calc(100vh - 52px);
+  }
+
+  /* PANEL IZQUIERDO — feed */
+  .panel-feed {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #e8e4de;
+    gap: 1rem;
+  }
+
+  .feed-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #9a948d;
+  }
+
+  .feed-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    width: 300px;
+  }
+
+  .feed-cell {
+    aspect-ratio: 1;
+    background: #ece8e1;
+    cursor: pointer;
+    position: relative;
+    transition: opacity 0.15s;
+  }
+  .feed-cell:hover { opacity: 0.85; }
+  .feed-cell.drag-over { outline: 2px solid #1d9e75; }
+  .feed-cell.empty { background: #dedad4; }
+
+  /* botón limpiar */
+  .btn-clear {
+    padding: 7px 18px;
+    background: transparent;
+    border: 0.5px solid #9a948d;
+    border-radius: 5px;
+    font-size: 12px;
+    color: #9a948d;
+    cursor: pointer;
+    transition: border-color 0.12s, color 0.12s;
+  }
+  .btn-clear:hover { border-color: #1a1a18; color: #1a1a18; }
+
+  /* PANEL DERECHO — paleta */
+  .panel-palette {
+    width: 220px;
+    flex-shrink: 0;
+    background: #fff;
+    border-left: 0.5px solid #ece8e1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.2rem;
+    gap: 0.8rem;
+    overflow-y: auto;
+  }
+
+  .palette-label {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #9a948d;
+    margin-bottom: 4px;
+  }
+
+  .chip {
+    aspect-ratio: 1;
+    width: 100%;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    transition: transform 0.12s, box-shadow 0.12s;
+    user-select: none;
+  }
+  .chip:active { cursor: grabbing; transform: scale(0.96); }
+  .chip:hover { transform: scale(1.02); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+
+  .chip-name {
+    font-size: 10px;
+    color: #9a948d;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  .chip-wrap {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* foto chip */
+  .chip.foto {
+    background: #1a1a18;
+    border: 2px dashed #9a948d;
+    color: #9a948d;
+    font-size: 18px;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">✦ Feed preview · Leer es viajar</span>
+  <span class="topbar-hint">Arrastra las fichas al feed</span>
+</div>
+
+<div class="layout">
+
+  <!-- FEED -->
+  <div class="panel-feed">
+    <span class="feed-label">Vista previa del feed</span>
+    <div class="feed-grid" id="feed-grid">
+      <!-- 12 celdas = 4 filas -->
+    </div>
+    <button class="btn-clear" onclick="clearFeed()">Limpiar feed</button>
+  </div>
+
+  <!-- PALETA -->
+  <div class="panel-palette">
+    <span class="palette-label">Fichas</span>
+
+    <div class="chip-wrap">
+      <div class="chip" draggable="true" data-color="#faf7f2" data-name="paper"
+        style="background:#faf7f2; border: 0.5px solid #ece8e1;"
+        ondragstart="onDragStart(event)"></div>
+      <div class="chip-name">Paper</div>
+    </div>
+
+    <div class="chip-wrap">
+      <div class="chip" draggable="true" data-color="#1d9e75" data-name="teal"
+        style="background:#1d9e75;"
+        ondragstart="onDragStart(event)"></div>
+      <div class="chip-name">Teal</div>
+    </div>
+
+    <div class="chip-wrap">
+      <div class="chip" draggable="true" data-color="#0f6e56" data-name="forest"
+        style="background:#0f6e56;"
+        ondragstart="onDragStart(event)"></div>
+      <div class="chip-name">Forest</div>
+    </div>
+
+    <div class="chip-wrap">
+      <div class="chip" draggable="true" data-color="#e8913c" data-name="naranja"
+        style="background:#e8913c;"
+        ondragstart="onDragStart(event)"></div>
+      <div class="chip-name">Naranja</div>
+    </div>
+
+    <div class="chip-wrap">
+      <div class="chip" draggable="true" data-color="#e8593c" data-name="rojo"
+        style="background:#e8593c;"
+        ondragstart="onDragStart(event)"></div>
+      <div class="chip-name">Rojo</div>
+    </div>
+
+    <div class="chip-wrap">
+      <div class="chip" draggable="true" data-color="#9fd9c0" data-name="mint"
+        style="background:#9fd9c0;"
+        ondragstart="onDragStart(event)"></div>
+      <div class="chip-name">Verde claro</div>
+    </div>
+
+    <div class="chip-wrap">
+      <div class="chip foto" draggable="true" data-color="#2a2a28" data-name="foto"
+        ondragstart="onDragStart(event)">📷</div>
+      <div class="chip-name">Foto</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let dragData = null;
+let dragSourceCell = null;
+
+// Crear celdas del feed
+const grid = document.getElementById('feed-grid');
+for (let i = 0; i < 12; i++) {
+  const cell = document.createElement('div');
+  cell.className = 'feed-cell empty';
+  cell.dataset.index = i;
+
+  cell.addEventListener('dragover', e => {
+    e.preventDefault();
+    cell.classList.add('drag-over');
+  });
+  cell.addEventListener('dragleave', () => cell.classList.remove('drag-over'));
+  cell.addEventListener('drop', e => {
+    e.preventDefault();
+    cell.classList.remove('drag-over');
+    applyToCell(cell, dragData.color, dragData.name, dragData.emoji);
+    // Si venía de otra celda, vaciarla
+    if (dragSourceCell && dragSourceCell !== cell) {
+      clearCell(dragSourceCell);
+    }
+    dragSourceCell = null;
+  });
+
+  // También permite arrastrar desde la celda
+  cell.addEventListener('dragstart', e => {
+    if (!cell.dataset.color) return;
+    dragData = { color: cell.dataset.color, name: cell.dataset.name, emoji: cell.dataset.emoji };
+    dragSourceCell = cell;
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  grid.appendChild(cell);
+}
+
+function applyToCell(cell, color, name, emoji) {
+  cell.style.background = color;
+  cell.dataset.color = color;
+  cell.dataset.name = name;
+  cell.dataset.emoji = emoji || '';
+  cell.classList.remove('empty');
+  cell.setAttribute('draggable', 'true');
+  cell.innerHTML = emoji ? `<span style="font-size:22px;">${emoji}</span>` : '';
+  // borde para paper
+  cell.style.outline = name === 'paper' ? '0.5px solid #ece8e1' : 'none';
+}
+
+function clearCell(cell) {
+  cell.style.background = '';
+  cell.style.outline = '';
+  cell.dataset.color = '';
+  cell.dataset.name = '';
+  cell.dataset.emoji = '';
+  cell.classList.add('empty');
+  cell.setAttribute('draggable', 'false');
+  cell.innerHTML = '';
+}
+
+function clearFeed() {
+  document.querySelectorAll('.feed-cell').forEach(clearCell);
+}
+
+function onDragStart(e) {
+  dragSourceCell = null;
+  dragData = {
+    color: e.target.dataset.color,
+    name: e.target.dataset.name,
+    emoji: e.target.dataset.name === 'foto' ? '📷' : ''
+  };
+  e.dataTransfer.effectAllowed = 'copy';
+}
+
+// Click en celda para limpiarla
+document.querySelectorAll('.feed-cell').forEach(cell => {
+  cell.addEventListener('click', () => {
+    if (cell.dataset.color) clearCell(cell);
+  });
+});
+</script>
+</body>
+</html>
