@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post maker · Leer es viajar</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    background: #f0ede8;
+    color: #1a1a18;
+    min-height: 100vh;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    height: 52px;
+    background: #fff;
+    border-bottom: 0.5px solid #ece8e1;
+  }
+  .topbar-logo {
+    font-family: Georgia, serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #1d9e75;
+    letter-spacing: 0.01em;
+  }
+  .tipo-selector {
+    display: flex;
+    background: #f0ede8;
+    border-radius: 6px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .tipo-btn {
+    padding: 5px 14px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #9a948d;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    white-space: nowrap;
+  }
+  .tipo-btn.active { background: #fff; color: #1a1a18; font-weight: 500; }
+
+  /* LAYOUT */
+  .layout {
+    display: flex;
+    height: calc(100vh - 52px);
+  }
+
+  /* PANEL IZQUIERDO — preview */
+  .panel-preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
+    background: #e8e4de;
+  }
+
+  .post {
+    width: 320px;
+    height: 400px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 2rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+    font-size: 16px;
+  }
+  .post.story-mode {
+    width: 253px;
+    height: 450px;
+  }
+
+  .post svg.deco {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  .post .quote {
+    font-family: 'Georgia', serif;
+    font-size: 1.05rem;
+    line-height: 1.65;
+    text-align: center;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    word-break: break-word;
+    width: 100%;
+  }
+  .post .quote-inner { text-align: center; }
+
+  .post .tag {
+    font-family: sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    margin-top: auto;
+    opacity: 0.45;
+    position: relative;
+    z-index: 1;
+  }
+
+  .btn-save {
+    padding: 10px 28px;
+    background: #1d9e75;
+    color: #fff;
+    border: none;
+    font-family: sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .btn-save:hover { background: #0f6e56; }
+
+  /* PANEL DERECHO — controles */
+  .panel-controls {
+    width: 280px;
+    flex-shrink: 0;
+    background: #fff;
+    border-left: 0.5px solid #ece8e1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section {
+    padding: 1rem 1.2rem;
+    border-bottom: 0.5px solid #f0ede8;
+  }
+
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #9a948d;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  /* EDITOR */
+  #editor {
+    width: 100%;
+    min-height: 80px;
+    border: 0.5px solid #ece8e1;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: Georgia, serif;
+    font-size: 14px;
+    line-height: 1.7;
+    outline: none;
+    background: #faf9f7;
+    color: #1a1a18;
+    text-align: center;
+    resize: none;
+  }
+  #editor:focus { border-color: #1d9e75; }
+
+  /* TOOLBAR FORMATO */
+  .format-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .tool-btn {
+    padding: 6px 12px;
+    border-radius: 5px;
+    border: 0.5px solid #ece8e1;
+    background: #f7f5f1;
+    font-size: 13px;
+    cursor: pointer;
+    color: #1a1a18;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.1s;
+  }
+  .tool-btn:hover { background: #ece8e1; }
+  .tool-btn.italic-btn { font-style: italic; font-family: Georgia, serif; }
+  .tool-btn.bold-btn { font-weight: 700; }
+  .tool-btn.clear-btn { color: #9a948d; font-size: 11px; }
+
+  .size-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .size-label {
+    font-size: 11px;
+    color: #9a948d;
+    min-width: 24px;
+    text-align: center;
+  }
+
+  /* COLORES */
+  .color-grid {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+  .color-dot {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.1s;
+    flex-shrink: 0;
+  }
+  .color-dot:hover { transform: scale(1.15); }
+
+  /* FONDOS */
+  .swatches { display: flex; flex-direction: column; gap: 5px; }
+  .swatch {
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; padding: 8px 10px;
+    border-radius: 6px;
+    border: 1.5px solid transparent;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .swatch:hover { background: #f7f5f1; }
+  .swatch.active { border-color: #1d9e75; background: #f0faf6; }
+  .swatch-dot { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; border: 0.5px solid rgba(0,0,0,0.08); }
+  .swatch-name { font-size: 13px; color: #1a1a18; }
+
+  /* MOBILE */
+  @media (max-width: 699px) {
+    .layout { flex-direction: column; height: auto; }
+    .panel-preview { padding: 1.5rem 1rem; min-height: 55vw; }
+    .post { max-height: 80vw; }
+    .panel-controls { width: 100%; border-left: none; border-top: 0.5px solid #ece8e1; }
+    .topbar { padding: 0 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">✦ Post maker · Leer es viajar</span>
+  <div class="tipo-selector">
+    <button class="tipo-btn active" onclick="setTipo('post', this)">Post 4:5</button>
+    <button class="tipo-btn" onclick="setTipo('story', this)">Story 9:16</button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- PREVIEW -->
+  <div class="panel-preview">
+    <div class="post" id="post">
+      <svg class="deco" id="deco" viewBox="0 0 300 375" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="quote" id="quote-text"><div class="quote-inner"></div></div>
+      <span class="tag" id="tag-text">leeresviajar.app</span>
+    </div>
+    <button class="btn-save" id="save-btn" onclick="guardar()">Guardar imagen</button>
+  </div>
+
+  <!-- CONTROLES -->
+  <div class="panel-controls">
+
+    <div class="section">
+      <span class="section-label">Frase</span>
+      <div id="editor" contenteditable="true" spellcheck="false">Llevas años viajando.<br>Solo te faltaba<br><em>el mapa.</em></div>
+    </div>
+
+    <div class="section">
+      <span class="section-label">Formato — selecciona texto primero</span>
+      <div class="format-row">
+        <button class="tool-btn bold-btn" onmousedown="e(event)" onclick="applyFormat('bold')">N</button>
+        <button class="tool-btn italic-btn" onmousedown="e(event)" onclick="applyFormat('italic')">I</button>
+        <button class="tool-btn clear-btn" onmousedown="e(event)" onclick="applyFormat('removeFormat')">✕ quitar</button>
+        <div class="size-control">
+          <button class="tool-btn" onmousedown="e(event)" onclick="changeFontSize(-2)">A−</button>
+          <span class="size-label" id="font-size-label">18</span>
+          <button class="tool-btn" onmousedown="e(event)" onclick="changeFontSize(2)">A+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="section-label">Color del texto seleccionado</span>
+      <div class="color-grid">
+        <div class="color-dot" style="background:#1a1a18;" onmousedown="e(event)" onclick="applyColor('#1a1a18')" title="Tinta"></div>
+        <div class="color-dot" style="background:#f7f5f1;border:0.5px solid #ccc;" onmousedown="e(event)" onclick="applyColor('#f7f5f1')" title="Paper"></div>
+        <div class="color-dot" style="background:#1d9e75;" onmousedown="e(event)" onclick="applyColor('#1d9e75')" title="Teal"></div>
+        <div class="color-dot" style="background:#0f6e56;" onmousedown="e(event)" onclick="applyColor('#0f6e56')" title="Forest"></div>
+        <div class="color-dot" style="background:#e8593c;" onmousedown="e(event)" onclick="applyColor('#e8593c')" title="Rojo"></div>
+        <div class="color-dot" style="background:#9fd9c0;" onmousedown="e(event)" onclick="applyColor('#9fd9c0')" title="Mint"></div>
+        <div class="color-dot" style="background:#9a948d;" onmousedown="e(event)" onclick="applyColor('#9a948d')" title="Muted"></div>
+        <div class="color-dot" style="background:#faf7f2;border:0.5px solid #ccc;" onmousedown="e(event)" onclick="applyColor('#faf7f2')" title="Parchment"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="section-label">Fondo</span>
+      <div class="swatches" id="swatches">
+        <div class="swatch active" data-id="paper">
+          <div class="swatch-dot" style="background:#faf7f2;"></div>
+          <span class="swatch-name">Paper — cuadrícula</span>
+        </div>
+        <div class="swatch" data-id="teal">
+          <div class="swatch-dot" style="background:#1d9e75;"></div>
+          <span class="swatch-name">Teal — sellos de pasaporte</span>
+        </div>
+        <div class="swatch" data-id="forest">
+          <div class="swatch-dot" style="background:#0f6e56;"></div>
+          <span class="swatch-name">Forest — meridianos</span>
+        </div>
+        <div class="swatch" data-id="rouge">
+          <div class="swatch-dot" style="background:#e8593c;"></div>
+          <span class="swatch-name">Rojo — ficticios</span>
+        </div>
+        <div class="swatch" data-id="mint">
+          <div class="swatch-dot" style="background:#9fd9c0;"></div>
+          <span class="swatch-name">Verde claro — topografía</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const themes = {
+  paper: {
+    bg: '#faf7f2', tagColor: '#1a1a18',
+    deco: `<g stroke="#1a1a18" stroke-width="0.4" opacity="0.07">
+      <line x1="0" y1="75" x2="300" y2="75"/><line x1="0" y1="150" x2="300" y2="150"/>
+      <line x1="0" y1="225" x2="300" y2="225"/><line x1="0" y1="300" x2="300" y2="300"/>
+      <line x1="75" y1="0" x2="75" y2="375"/><line x1="150" y1="0" x2="150" y2="375"/>
+      <line x1="225" y1="0" x2="225" y2="375"/>
+    </g>
+    <g font-family="monospace" font-size="7" fill="#1a1a18" opacity="0.12">
+      <text x="4" y="73">43°N</text><text x="4" y="148">40°N</text>
+      <text x="4" y="223">37°N</text><text x="4" y="298">34°N</text>
+      <text x="73" y="370" text-anchor="end">3°W</text>
+      <text x="148" y="370" text-anchor="end">0°</text>
+      <text x="223" y="370" text-anchor="end">3°E</text>
+    </g>
+    <g stroke="#1a1a18" stroke-width="0.5" opacity="0.1" transform="translate(262,30)">
+      <line x1="0" y1="-12" x2="0" y2="12"/><line x1="-12" y1="0" x2="12" y2="0"/>
+      <polygon points="0,-14 -3,-8 3,-8" fill="#1a1a18" opacity="0.15"/>
+    </g>
+    <text x="262" y="50" font-family="monospace" font-size="6" fill="#1a1a18" opacity="0.12" text-anchor="middle">N</text>`,
+    decoStory: `<g stroke="#1a1a18" stroke-width="0.4" opacity="0.07">
+      <line x1="0" y1="75" x2="300" y2="75"/>
+      <line x1="0" y1="150" x2="300" y2="150"/>
+      <line x1="0" y1="225" x2="300" y2="225"/>
+      <line x1="0" y1="300" x2="300" y2="300"/>
+      <line x1="0" y1="375" x2="300" y2="375"/>
+      <line x1="0" y1="450" x2="300" y2="450"/>
+      <line x1="75" y1="0" x2="75" y2="533"/>
+      <line x1="150" y1="0" x2="150" y2="533"/>
+      <line x1="225" y1="0" x2="225" y2="533"/>
+    </g>
+    <g font-family="monospace" font-size="7" fill="#1a1a18" opacity="0.12">
+      <text x="4" y="73">48°N</text>
+      <text x="4" y="148">45°N</text>
+      <text x="4" y="223">42°N</text>
+      <text x="4" y="298">39°N</text>
+      <text x="4" y="373">36°N</text>
+      <text x="4" y="448">33°N</text>
+      <text x="73" y="526" text-anchor="end">3°W</text>
+      <text x="148" y="526" text-anchor="end">0°</text>
+      <text x="223" y="526" text-anchor="end">3°E</text>
+    </g>
+    <g stroke="#1a1a18" stroke-width="0.5" opacity="0.1" transform="translate(262,30)">
+      <line x1="0" y1="-12" x2="0" y2="12"/><line x1="-12" y1="0" x2="12" y2="0"/>
+      <polygon points="0,-14 -3,-8 3,-8" fill="#1a1a18" opacity="0.15"/>
+    </g>
+    <text x="262" y="50" font-family="monospace" font-size="6" fill="#1a1a18" opacity="0.12" text-anchor="middle">N</text>`
+  },
+  teal: {
+    bg: '#1d9e75', tagColor: '#f7f5f1',
+    deco: `<g transform="translate(52,55) rotate(-18)" opacity="0.13" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <ellipse cx="0" cy="0" rx="38" ry="26"/><ellipse cx="0" cy="0" rx="32" ry="20"/>
+      <text x="0" y="-6" font-family="monospace" font-size="6" fill="#f7f5f1" text-anchor="middle" stroke="none">MADRID</text>
+      <text x="0" y="4" font-family="monospace" font-size="5" fill="#f7f5f1" text-anchor="middle" stroke="none">14 MAR 2023</text>
+      <text x="0" y="13" font-family="monospace" font-size="5" fill="#f7f5f1" text-anchor="middle" stroke="none">ENTRADA</text>
+    </g>
+    <g transform="translate(225,80) rotate(12)" opacity="0.13" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <rect x="-32" y="-22" width="64" height="44" rx="4"/><rect x="-27" y="-17" width="54" height="34" rx="2"/>
+      <text x="0" y="-5" font-family="monospace" font-size="6" fill="#f7f5f1" text-anchor="middle" stroke="none">LISBOA</text>
+      <text x="0" y="5" font-family="monospace" font-size="5" fill="#f7f5f1" text-anchor="middle" stroke="none">02 JUN 2023</text>
+      <text x="0" y="14" font-family="monospace" font-size="5" fill="#f7f5f1" text-anchor="middle" stroke="none">SAÍDA</text>
+    </g>
+    <g transform="translate(48,190) rotate(8)" opacity="0.12" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <circle cx="0" cy="0" r="30"/><circle cx="0" cy="0" r="24"/>
+      <text x="0" y="-10" font-family="monospace" font-size="5.5" fill="#f7f5f1" text-anchor="middle" stroke="none">ROMA</text>
+      <text x="0" y="0" font-family="monospace" font-size="5" fill="#f7f5f1" text-anchor="middle" stroke="none">FCO</text>
+      <text x="0" y="10" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">19 AGO 2022</text>
+    </g>
+    <g transform="translate(235,200) rotate(-8)" opacity="0.13" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <ellipse cx="0" cy="0" rx="36" ry="24"/><ellipse cx="0" cy="0" rx="30" ry="18"/>
+      <text x="0" y="-5" font-family="monospace" font-size="6" fill="#f7f5f1" text-anchor="middle" stroke="none">PARIS</text>
+      <text x="0" y="5" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">CDG · ARRIVÉE</text>
+      <text x="0" y="13" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">11 NOV 2023</text>
+    </g>
+    <g transform="translate(75,310) rotate(-14)" opacity="0.11" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <rect x="-34" y="-20" width="68" height="40" rx="3"/><rect x="-28" y="-14" width="56" height="28" rx="2"/>
+      <text x="0" y="-3" font-family="monospace" font-size="6" fill="#f7f5f1" text-anchor="middle" stroke="none">TOKYO</text>
+      <text x="0" y="8" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">NRT · 入国</text>
+    </g>
+    <g transform="translate(230,320) rotate(6)" opacity="0.12" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <circle cx="0" cy="0" r="26"/><circle cx="0" cy="0" r="20"/>
+      <text x="0" y="-6" font-family="monospace" font-size="5.5" fill="#f7f5f1" text-anchor="middle" stroke="none">LONDON</text>
+      <text x="0" y="4" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">LHR</text>
+      <text x="0" y="13" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">MAR 2024</text>
+    </g>
+    <g transform="translate(152,148) rotate(5)" opacity="0.09" fill="none" stroke="#f7f5f1" stroke-width="1">
+      <ellipse cx="0" cy="0" rx="28" ry="18"/>
+      <text x="0" y="-3" font-family="monospace" font-size="5.5" fill="#f7f5f1" text-anchor="middle" stroke="none">BERLIN</text>
+      <text x="0" y="7" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">SXF · 2022</text>
+    </g>`,
+    decoStory: `<g transform="translate(52,55) rotate(-18)" opacity="0.13" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <ellipse cx="0" cy="0" rx="38" ry="26"/><ellipse cx="0" cy="0" rx="32" ry="20"/>
+      <text x="0" y="-6" font-family="monospace" font-size="6" fill="#f7f5f1" text-anchor="middle" stroke="none">MADRID</text>
+      <text x="0" y="4" font-family="monospace" font-size="5" fill="#f7f5f1" text-anchor="middle" stroke="none">14 MAR 2023</text>
+      <text x="0" y="13" font-family="monospace" font-size="5" fill="#f7f5f1" text-anchor="middle" stroke="none">ENTRADA</text>
+    </g>
+    <g transform="translate(225,60) rotate(12)" opacity="0.13" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <rect x="-32" y="-22" width="64" height="44" rx="4"/><rect x="-27" y="-17" width="54" height="34" rx="2"/>
+      <text x="0" y="-5" font-family="monospace" font-size="6" fill="#f7f5f1" text-anchor="middle" stroke="none">LISBOA</text>
+      <text x="0" y="5" font-family="monospace" font-size="5" fill="#f7f5f1" text-anchor="middle" stroke="none">02 JUN 2023</text>
+      <text x="0" y="14" font-family="monospace" font-size="5" fill="#f7f5f1" text-anchor="middle" stroke="none">SAÍDA</text>
+    </g>
+    <g transform="translate(48,185) rotate(8)" opacity="0.12" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <circle cx="0" cy="0" r="30"/><circle cx="0" cy="0" r="24"/>
+      <text x="0" y="-10" font-family="monospace" font-size="5.5" fill="#f7f5f1" text-anchor="middle" stroke="none">ROMA</text>
+      <text x="0" y="0" font-family="monospace" font-size="5" fill="#f7f5f1" text-anchor="middle" stroke="none">FCO</text>
+      <text x="0" y="10" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">19 AGO 2022</text>
+    </g>
+    <g transform="translate(235,270) rotate(-8)" opacity="0.13" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <ellipse cx="0" cy="0" rx="36" ry="24"/><ellipse cx="0" cy="0" rx="30" ry="18"/>
+      <text x="0" y="-5" font-family="monospace" font-size="6" fill="#f7f5f1" text-anchor="middle" stroke="none">PARIS</text>
+      <text x="0" y="5" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">CDG · ARRIVÉE</text>
+      <text x="0" y="13" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">11 NOV 2023</text>
+    </g>
+    <g transform="translate(75,360) rotate(-14)" opacity="0.11" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <rect x="-34" y="-20" width="68" height="40" rx="3"/><rect x="-28" y="-14" width="56" height="28" rx="2"/>
+      <text x="0" y="-3" font-family="monospace" font-size="6" fill="#f7f5f1" text-anchor="middle" stroke="none">TOKYO</text>
+      <text x="0" y="8" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">NRT · 入国</text>
+    </g>
+    <g transform="translate(235,450) rotate(6)" opacity="0.12" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <circle cx="0" cy="0" r="26"/><circle cx="0" cy="0" r="20"/>
+      <text x="0" y="-6" font-family="monospace" font-size="5.5" fill="#f7f5f1" text-anchor="middle" stroke="none">LONDON</text>
+      <text x="0" y="4" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">LHR</text>
+      <text x="0" y="13" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">MAR 2024</text>
+    </g>
+    <g transform="translate(60,470) rotate(5)" opacity="0.09" fill="none" stroke="#f7f5f1" stroke-width="1">
+      <ellipse cx="0" cy="0" rx="28" ry="18"/>
+      <text x="0" y="-3" font-family="monospace" font-size="5.5" fill="#f7f5f1" text-anchor="middle" stroke="none">BERLIN</text>
+      <text x="0" y="7" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">SXF · 2022</text>
+    </g>
+    <g transform="translate(150,140) rotate(-6)" opacity="0.1" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <ellipse cx="0" cy="0" rx="34" ry="22"/><ellipse cx="0" cy="0" rx="28" ry="16"/>
+      <text x="0" y="-5" font-family="monospace" font-size="6" fill="#f7f5f1" text-anchor="middle" stroke="none">BUENOS AIRES</text>
+      <text x="0" y="6" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">EZE · 2024</text>
+    </g>
+    <g transform="translate(160,390) rotate(10)" opacity="0.1" fill="none" stroke="#f7f5f1" stroke-width="1.2">
+      <rect x="-30" y="-18" width="60" height="36" rx="3"/><rect x="-24" y="-12" width="48" height="24" rx="2"/>
+      <text x="0" y="-3" font-family="monospace" font-size="6" fill="#f7f5f1" text-anchor="middle" stroke="none">SEOUL</text>
+      <text x="0" y="8" font-family="monospace" font-size="4.5" fill="#f7f5f1" text-anchor="middle" stroke="none">ICN · 입국</text>
+    </g>`
+  },
+  forest: {
+    bg: '#0f6e56', tagColor: '#f7f5f1',
+    deco: `<g fill="none" stroke="#f7f5f1" stroke-width="0.5" opacity="0.1">
+      <path d="M0,80 Q150,60 300,80"/><path d="M0,155 Q150,135 300,155"/>
+      <path d="M0,230 Q150,210 300,230"/><path d="M0,305 Q150,285 300,305"/>
+    </g>
+    <g fill="none" stroke="#f7f5f1" stroke-width="0.5" opacity="0.1">
+      <path d="M60,0 Q50,187 60,375"/><path d="M120,0 Q110,187 120,375"/>
+      <path d="M180,0 Q190,187 180,375"/><path d="M240,0 Q250,187 240,375"/>
+    </g>
+    <g transform="translate(20,345)" opacity="0.15">
+      <line x1="0" y1="0" x2="60" y2="0" stroke="#f7f5f1" stroke-width="0.8"/>
+      <line x1="0" y1="-4" x2="0" y2="4" stroke="#f7f5f1" stroke-width="0.8"/>
+      <line x1="60" y1="-4" x2="60" y2="4" stroke="#f7f5f1" stroke-width="0.8"/>
+      <text x="30" y="-7" font-family="monospace" font-size="6" fill="#f7f5f1" text-anchor="middle">500 km</text>
+    </g>`,
+    decoStory: `<g fill="none" stroke="#f7f5f1" stroke-width="0.5" opacity="0.1">
+      <path d="M0,75 Q150,55 300,75"/>
+      <path d="M0,150 Q150,130 300,150"/>
+      <path d="M0,225 Q150,205 300,225"/>
+      <path d="M0,300 Q150,280 300,300"/>
+      <path d="M0,375 Q150,355 300,375"/>
+      <path d="M0,450 Q150,430 300,450"/>
+    </g>
+    <g fill="none" stroke="#f7f5f1" stroke-width="0.5" opacity="0.1">
+      <path d="M60,0 Q50,266 60,533"/>
+      <path d="M120,0 Q110,266 120,533"/>
+      <path d="M180,0 Q190,266 180,533"/>
+      <path d="M240,0 Q250,266 240,533"/>
+    </g>
+    <g transform="translate(20,500)" opacity="0.15">
+      <line x1="0" y1="0" x2="60" y2="0" stroke="#f7f5f1" stroke-width="0.8"/>
+      <line x1="0" y1="-4" x2="0" y2="4" stroke="#f7f5f1" stroke-width="0.8"/>
+      <line x1="60" y1="-4" x2="60" y2="4" stroke="#f7f5f1" stroke-width="0.8"/>
+      <text x="30" y="-7" font-family="monospace" font-size="6" fill="#f7f5f1" text-anchor="middle">500 km</text>
+    </g>`
+  },
+  rouge: {
+    bg: '#e8593c', tagColor: '#faf7f2',
+    deco: `<g stroke="#faf7f2" stroke-width="0.4" opacity="0.12">
+      <line x1="150" y1="187" x2="0" y2="0"/><line x1="150" y1="187" x2="300" y2="0"/>
+      <line x1="150" y1="187" x2="0" y2="375"/><line x1="150" y1="187" x2="300" y2="375"/>
+      <line x1="150" y1="187" x2="150" y2="0"/><line x1="150" y1="187" x2="150" y2="375"/>
+      <line x1="150" y1="187" x2="0" y2="187"/><line x1="150" y1="187" x2="300" y2="187"/>
+    </g>
+    <rect x="10" y="10" width="280" height="355" fill="none" stroke="#faf7f2" stroke-width="0.6" opacity="0.15" rx="2"/>
+    <rect x="15" y="15" width="270" height="345" fill="none" stroke="#faf7f2" stroke-width="0.3" opacity="0.1" rx="1"/>
+    <g opacity="0.18" fill="none" stroke="#faf7f2" stroke-width="0.8" stroke-linecap="round">
+      <path d="M25,280 C35,265 50,275 45,255 C40,235 55,245 60,228 C65,212 50,205 58,190"/>
+      <ellipse cx="58" cy="186" rx="5" ry="7" fill="#faf7f2" opacity="0.15"/>
+      <line x1="54" y1="183" x2="51" y2="180"/><line x1="62" y1="183" x2="65" y2="180"/>
+      <path d="M55,192 C58,196 62,193 58,192"/>
+    </g>
+    <g opacity="0.15" fill="#faf7f2" stroke="#faf7f2" stroke-width="0.5">
+      <ellipse cx="248" cy="310" rx="18" ry="10"/><ellipse cx="260" cy="306" rx="8" ry="5"/>
+      <path d="M230,308 C225,300 228,296 233,305" fill="#faf7f2"/>
+      <path d="M233,318 C228,326 232,330 237,320" fill="#faf7f2"/>
+      <circle cx="264" cy="304" r="1.5" fill="#e8593c"/>
+    </g>
+    <text x="105" y="58" font-family="Georgia, serif" font-size="7.5" fill="#faf7f2" opacity="0.22" text-anchor="middle" font-style="italic" letter-spacing="1">hic svnt dracones</text>
+    <g transform="translate(248,60)" opacity="0.2">
+      <line x1="0" y1="-16" x2="0" y2="16" stroke="#faf7f2" stroke-width="0.6"/>
+      <line x1="-16" y1="0" x2="16" y2="0" stroke="#faf7f2" stroke-width="0.6"/>
+      <line x1="-11" y1="-11" x2="11" y2="11" stroke="#faf7f2" stroke-width="0.4"/>
+      <line x1="11" y1="-11" x2="-11" y2="11" stroke="#faf7f2" stroke-width="0.4"/>
+      <polygon points="0,-18 -2.5,-10 2.5,-10" fill="#faf7f2"/>
+      <polygon points="0,18 -2.5,10 2.5,10" fill="#faf7f2" opacity="0.6"/>
+      <polygon points="-18,0 -10,-2.5 -10,2.5" fill="#faf7f2" opacity="0.6"/>
+      <polygon points="18,0 10,-2.5 10,2.5" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="0" cy="0" r="3" fill="none" stroke="#faf7f2" stroke-width="0.5"/>
+      <text x="0" y="-21" font-family="Georgia, serif" font-size="7" fill="#faf7f2" text-anchor="middle" font-style="italic">N</text>
+    </g>`,
+    decoStory: `<g stroke="#faf7f2" stroke-width="0.4" opacity="0.12">
+      <line x1="150" y1="266" x2="0" y2="0"/><line x1="150" y1="266" x2="300" y2="0"/>
+      <line x1="150" y1="266" x2="0" y2="533"/><line x1="150" y1="266" x2="300" y2="533"/>
+      <line x1="150" y1="266" x2="150" y2="0"/><line x1="150" y1="266" x2="150" y2="533"/>
+      <line x1="150" y1="266" x2="0" y2="266"/><line x1="150" y1="266" x2="300" y2="266"/>
+    </g>
+    <rect x="10" y="10" width="280" height="513" fill="none" stroke="#faf7f2" stroke-width="0.6" opacity="0.15" rx="2"/>
+    <rect x="15" y="15" width="270" height="503" fill="none" stroke="#faf7f2" stroke-width="0.3" opacity="0.1" rx="1"/>
+    <!-- serpiente de mar izquierda, más larga -->
+    <g opacity="0.18" fill="none" stroke="#faf7f2" stroke-width="0.8" stroke-linecap="round">
+      <path d="M25,420 C35,400 50,415 45,390 C40,365 55,378 60,355 C65,332 50,320 58,298 C65,278 50,265 58,245"/>
+      <ellipse cx="58" cy="241" rx="5" ry="7" fill="#faf7f2" opacity="0.15"/>
+      <line x1="54" y1="238" x2="51" y2="234"/><line x1="62" y1="238" x2="65" y2="234"/>
+      <path d="M55,247 C58,251 62,248 58,247"/>
+    </g>
+    <!-- bestia marina derecha, más grande -->
+    <g opacity="0.15" fill="#faf7f2" stroke="#faf7f2" stroke-width="0.5">
+      <ellipse cx="248" cy="430" rx="22" ry="12"/>
+      <ellipse cx="262" cy="425" rx="10" ry="6"/>
+      <path d="M226,428 C220,418 224,413 230,424" fill="#faf7f2"/>
+      <path d="M230,440 C224,450 228,455 234,442" fill="#faf7f2"/>
+      <circle cx="267" cy="423" r="2" fill="#e8593c"/>
+    </g>
+    <!-- segunda bestia pequeña arriba derecha -->
+    <g opacity="0.1" fill="#faf7f2" stroke="#faf7f2" stroke-width="0.4">
+      <ellipse cx="240" cy="100" rx="16" ry="9"/>
+      <ellipse cx="252" cy="97" rx="7" ry="4"/>
+      <circle cx="256" cy="95" r="1.5" fill="#e8593c"/>
+    </g>
+    <text x="105" y="58" font-family="Georgia, serif" font-size="7.5" fill="#faf7f2" opacity="0.22" text-anchor="middle" font-style="italic" letter-spacing="1">hic svnt dracones</text>
+    <text x="170" y="490" font-family="Georgia, serif" font-size="6.5" fill="#faf7f2" opacity="0.15" text-anchor="middle" font-style="italic" letter-spacing="1">terra incognita</text>
+    <g transform="translate(248,75)" opacity="0.2">
+      <line x1="0" y1="-16" x2="0" y2="16" stroke="#faf7f2" stroke-width="0.6"/>
+      <line x1="-16" y1="0" x2="16" y2="0" stroke="#faf7f2" stroke-width="0.6"/>
+      <line x1="-11" y1="-11" x2="11" y2="11" stroke="#faf7f2" stroke-width="0.4"/>
+      <line x1="11" y1="-11" x2="-11" y2="11" stroke="#faf7f2" stroke-width="0.4"/>
+      <polygon points="0,-18 -2.5,-10 2.5,-10" fill="#faf7f2"/>
+      <polygon points="0,18 -2.5,10 2.5,10" fill="#faf7f2" opacity="0.6"/>
+      <polygon points="-18,0 -10,-2.5 -10,2.5" fill="#faf7f2" opacity="0.6"/>
+      <polygon points="18,0 10,-2.5 10,2.5" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="0" cy="0" r="3" fill="none" stroke="#faf7f2" stroke-width="0.5"/>
+      <text x="0" y="-21" font-family="Georgia, serif" font-size="7" fill="#faf7f2" text-anchor="middle" font-style="italic">N</text>
+    </g>`
+  },
+  mint: {
+    bg: '#9fd9c0', tagColor: '#0f6e56',
+    deco: `<g fill="none" stroke="#0f6e56" opacity="0.1" stroke-width="0.7">
+      <ellipse cx="200" cy="280" rx="200" ry="120"/><ellipse cx="200" cy="280" rx="160" ry="90"/>
+      <ellipse cx="200" cy="280" rx="120" ry="65"/><ellipse cx="200" cy="280" rx="80" ry="42"/>
+      <ellipse cx="200" cy="280" rx="44" ry="22"/>
+    </g>
+    <g fill="none" stroke="#0f6e56" opacity="0.07" stroke-width="0.6">
+      <ellipse cx="55" cy="80" rx="90" ry="55"/><ellipse cx="55" cy="80" rx="60" ry="36"/>
+      <ellipse cx="55" cy="80" rx="32" ry="20"/>
+    </g>
+    <text x="215" y="278" font-family="monospace" font-size="6" fill="#0f6e56" opacity="0.2">1.200m</text>
+    <text x="215" y="255" font-family="monospace" font-size="6" fill="#0f6e56" opacity="0.15">1.800m</text>
+    <text x="215" y="237" font-family="monospace" font-size="6" fill="#0f6e56" opacity="0.12">2.400m</text>`,
+    decoStory: `<g fill="none" stroke="#0f6e56" opacity="0.1" stroke-width="0.7">
+      <ellipse cx="150" cy="380" rx="200" ry="130"/>
+      <ellipse cx="150" cy="380" rx="160" ry="100"/>
+      <ellipse cx="150" cy="380" rx="120" ry="72"/>
+      <ellipse cx="150" cy="380" rx="80" ry="46"/>
+      <ellipse cx="150" cy="380" rx="44" ry="24"/>
+    </g>
+    <g fill="none" stroke="#0f6e56" opacity="0.07" stroke-width="0.6">
+      <ellipse cx="55" cy="110" rx="90" ry="55"/>
+      <ellipse cx="55" cy="110" rx="60" ry="36"/>
+      <ellipse cx="55" cy="110" rx="32" ry="20"/>
+    </g>
+    <g fill="none" stroke="#0f6e56" opacity="0.06" stroke-width="0.6">
+      <ellipse cx="240" cy="200" rx="70" ry="44"/>
+      <ellipse cx="240" cy="200" rx="46" ry="28"/>
+      <ellipse cx="240" cy="200" rx="24" ry="14"/>
+    </g>
+    <text x="220" y="378" font-family="monospace" font-size="6" fill="#0f6e56" opacity="0.2">1.200m</text>
+    <text x="220" y="355" font-family="monospace" font-size="6" fill="#0f6e56" opacity="0.15">1.800m</text>
+    <text x="220" y="335" font-family="monospace" font-size="6" fill="#0f6e56" opacity="0.12">2.400m</text>
+    <text x="60" y="108" font-family="monospace" font-size="5" fill="#0f6e56" opacity="0.12">850m</text>
+    <text x="60" y="95" font-family="monospace" font-size="5" fill="#0f6e56" opacity="0.1">1.100m</text>`
+  }
+};
+
+let currentTheme = 'paper';
+let currentTipo = 'post';
+let savedRange = null;
+let fontSize = 18; // px base en el post preview
+
+// Evitar que los botones roben el foco del editor
+function e(ev) { ev.preventDefault(); }
+
+function saveRange() {
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0) {
+    const r = sel.getRangeAt(0);
+    const editor = document.getElementById('editor');
+    if (editor.contains(r.commonAncestorContainer)) {
+      savedRange = r.cloneRange();
+    }
+  }
+}
+
+function restoreRange() {
+  if (!savedRange) return false;
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(savedRange);
+  return true;
+}
+
+function applyFormat(cmd) {
+  if (!restoreRange()) return;
+  document.execCommand(cmd, false, null);
+  syncPreview();
+  saveRange();
+}
+
+function applyColor(color) {
+  if (!restoreRange()) return;
+  document.execCommand('foreColor', false, color);
+  syncPreview();
+  saveRange();
+}
+
+function syncPreview() {
+  const inner = document.querySelector('#quote-text .quote-inner');
+  inner.innerHTML = document.getElementById('editor').innerHTML;
+}
+
+function changeFontSize(delta) {
+  fontSize = Math.max(10, Math.min(42, fontSize + delta));
+  document.getElementById('font-size-label').textContent = fontSize;
+  document.querySelector('#quote-text .quote-inner').style.fontSize = fontSize + 'px';
+}
+
+function render() {
+  const theme = themes[currentTheme];
+  const isStory = currentTipo === 'story';
+  document.getElementById('post').style.background = theme.bg;
+  document.getElementById('tag-text').style.color = theme.tagColor;
+  const deco = document.getElementById('deco');
+  deco.setAttribute('viewBox', isStory ? '0 0 300 533' : '0 0 300 375');
+  deco.innerHTML = isStory ? (theme.decoStory || theme.deco) : theme.deco;
+  syncPreview();
+}
+
+const editor = document.getElementById('editor');
+editor.addEventListener('mouseup', saveRange);
+editor.addEventListener('keyup', saveRange);
+editor.addEventListener('touchend', () => setTimeout(saveRange, 50));
+editor.addEventListener('input', syncPreview);
+
+document.getElementById('swatches').addEventListener('click', e => {
+  const sw = e.target.closest('.swatch');
+  if (!sw) return;
+  document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+  sw.classList.add('active');
+  currentTheme = sw.dataset.id;
+  render();
+});
+
+render();
+
+function setTipo(tipo, btn) {
+  currentTipo = tipo;
+  document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const post = document.getElementById('post');
+  if (tipo === 'story') {
+    post.classList.add('story-mode');
+  } else {
+    post.classList.remove('story-mode');
+  }
+  render();
+}
+
+function guardar() {
+  const btn = document.getElementById('save-btn');
+  btn.textContent = 'Generando...';
+  btn.disabled = true;
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const theme = themes[currentTheme];
+  const W = currentTipo === 'story' ? 1080 : 1080;
+  const H = currentTipo === 'story' ? 1920 : 1350;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = theme.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  const svgEl = document.getElementById('deco');
+  const svgData = new XMLSerializer().serializeToString(svgEl);
+  const svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
+  const svgImg = new Image();
+
+  svgImg.onload = function() {
+    ctx.drawImage(svgImg, 0, 0, W, H);
+
+    const inner = document.querySelector('#quote-text .quote-inner');
+    renderTextoCanvas(ctx, inner, W, H, theme.tagColor);
+
+    ctx.font = '400 28px sans-serif';
+    ctx.fillStyle = theme.tagColor;
+    ctx.globalAlpha = 0.45;
+    ctx.textAlign = 'center';
+    ctx.fillText('leeresviajar.app', W/2, H - 80);
+    ctx.globalAlpha = 1;
+
+    const url = canvas.toDataURL('image/png');
+
+    if (isIOS) {
+      // En iOS mostramos la imagen en la misma página para que el usuario la guarde
+      let overlay = document.getElementById('ios-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'ios-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;gap:1rem;';
+        document.body.appendChild(overlay);
+      }
+      overlay.innerHTML = `
+        <img src="${url}" style="max-width:100%;max-height:70vh;object-fit:contain;">
+        <p style="color:#fff;font-size:13px;text-align:center;font-family:sans-serif;opacity:0.8;">Mantén pulsada la imagen para guardarla en tu carrete</p>
+        <button onclick="document.getElementById('ios-overlay').remove()" style="padding:10px 24px;background:#1d9e75;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;">Cerrar</button>
+      `;
+      overlay.style.display = 'flex';
+    } else {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = currentTipo === 'story' ? 'leeresviajar-story.png' : 'leeresviajar-post.png';
+      a.click();
+    }
+
+    btn.textContent = 'Guardar imagen';
+    btn.disabled = false;
+  };
+
+  svgImg.onerror = function() {
+    btn.textContent = 'Guardar imagen';
+    btn.disabled = false;
+    alert('Error al generar la imagen. Prueba a hacer captura de pantalla.');
+  };
+
+  svgImg.src = svgUrl;
+}
+
+function renderTextoCanvas(ctx, container, W, H, defaultColor) {
+  // Recopilar líneas (separadas por <br>)
+  const html = container.innerHTML;
+  const parts = html.split(/<br\s*\/?>/i);
+  const lineHeight = 90;
+  const totalH = parts.length * lineHeight;
+  let y = H/2 - totalH/2 + 60;
+
+  parts.forEach(part => {
+    // Parsear spans con estilos inline
+    const tmp = document.createElement('div');
+    tmp.innerHTML = part;
+    renderLineCanvas(ctx, tmp, W/2, y, defaultColor);
+    y += lineHeight;
+  });
+}
+
+function renderLineCanvas(ctx, node, cx, y, defaultColor) {
+  // Medir el ancho total primero
+  let totalW = 0;
+  const segments = extractSegments(node, defaultColor);
+  segments.forEach(seg => {
+    ctx.font = segFont(seg);
+    totalW += ctx.measureText(seg.text).width;
+  });
+
+  let x = cx - totalW / 2;
+  segments.forEach(seg => {
+    ctx.font = segFont(seg);
+    ctx.fillStyle = seg.color;
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+    ctx.fillText(seg.text, x, y);
+    x += ctx.measureText(seg.text).width;
+  });
+}
+
+function segFont(seg) {
+  const style = seg.italic ? 'italic' : 'normal';
+  const weight = seg.bold ? '700' : '400';
+  const size = Math.round(fontSize * 3.2); // escalar a resolución de exportación
+  return `${style} ${weight} ${size}px Georgia, serif`;
+}
+
+function extractSegments(node, defaultColor, inherited) {
+  inherited = inherited || {bold: false, italic: false, color: defaultColor};
+  let segs = [];
+  node.childNodes.forEach(child => {
+    if (child.nodeType === 3) {
+      // text node
+      if (child.textContent) {
+        segs.push({text: child.textContent, bold: inherited.bold, italic: inherited.italic, color: inherited.color});
+      }
+    } else if (child.nodeType === 1) {
+      const tag = child.tagName.toLowerCase();
+      const style = child.getAttribute('style') || '';
+      const colorMatch = style.match(/color:\s*([^;]+)/);
+      const color = colorMatch ? colorMatch[1].trim() : inherited.color;
+      const bold = inherited.bold || tag === 'b' || tag === 'strong' || style.includes('bold');
+      const italic = inherited.italic || tag === 'i' || tag === 'em' || style.includes('italic');
+      segs = segs.concat(extractSegments(child, color, {bold, italic, color}));
+    }
+  });
+  return segs;
+}
+</script>
+</body>
+</html>
