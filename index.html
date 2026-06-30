@@ -1142,8 +1142,12 @@ function extractSegments(node, defaultColor, inherited) {
     } else if (child.nodeType === 1) {
       const tag = child.tagName.toLowerCase();
       const style = child.getAttribute('style') || '';
-      const colorMatch = style.match(/color:\s*([^;]+)/);
-      const color = colorMatch ? colorMatch[1].trim() : inherited.color;
+      const styleColorMatch = style.match(/color:\s*([^;]+)/);
+      // Safari/Chrome con execCommand suelen usar <font color="..."> en vez de style
+      const fontColorAttr = tag === 'font' ? child.getAttribute('color') : null;
+      const color = styleColorMatch ? styleColorMatch[1].trim()
+                  : fontColorAttr ? fontColorAttr
+                  : inherited.color;
       const bold = inherited.bold || tag === 'b' || tag === 'strong' || style.includes('bold');
       const italic = inherited.italic || tag === 'i' || tag === 'em' || style.includes('italic');
       segs = segs.concat(extractSegments(child, color, {bold, italic, color}));
